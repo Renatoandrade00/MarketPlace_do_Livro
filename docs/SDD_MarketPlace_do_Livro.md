@@ -8,7 +8,7 @@ Este documento descreve as especificações técnicas, padrões de arquitetura, 
 
 O **MarketPlace do Livro** é uma aplicação web de comércio eletrônico didática com foco em inteligência artificial híbrida de duas frentes:
 1. Um **motor de recomendação numérica** baseado em aprendizado profundo (Deep Learning) com rede neural Two-Tower rodando localmente no Node.js via TensorFlow.js.
-2. Um **sistema de explicabilidade cognitiva** baseado em LLM via API Groq que converte o percentual de afinidade em uma frase persuasiva personalizada em português de fácil compreensão.
+2. Um **sistema de explicabilidade cognitiva** baseado em LLM via Gemini API que converte o percentual de afinidade em uma frase persuasiva personalizada em português de fácil compreensão.
 
 ---
 
@@ -153,7 +153,7 @@ Strings vindas do dataset de terceiros (como `nome` do livro, `autor` ou `cidade
 
 ### Estratégia de Caching e Fallbacks
 * **Cache em Memória:** Um cache simples por mapa no backend armazena justificativas agregando a chave por `` `${userId}-${bookId}-${Math.round(score * 20)}` ``. Isso reduz custos de API e previne o consumo redundante.
-* **Fallback Estático:** Se a API do Groq responder com status `429` (limite de taxa do tier gratuito) ou sofrer instabilidade de rede, o sistema de forma transparente injeta um fallback textual padrão formatado localmente, mitigando falhas na experiência do usuário.
+* **Fallback Estático:** Se a Gemini API responder com status `429` (limite de taxa do tier gratuito) ou sofrer instabilidade de rede, o sistema de forma transparente injeta um fallback textual padrão formatado localmente, mitigando falhas na experiência do usuário.
 
 ---
 

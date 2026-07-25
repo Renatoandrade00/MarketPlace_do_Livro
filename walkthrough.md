@@ -9,7 +9,7 @@ Guia completo de tudo que você precisa criar/configurar **antes** de começar a
 | Serviço | Para quê | Precisa de conta? | Precisa de API Key? | Cartão de crédito? | Quando usar |
 |---|---|---|---|---|---|
 | **Node.js** | Runtime do projeto | ❌ Instalação local | ❌ | ❌ | Fase 1 em diante |
-| **Groq** | LLM (explicações em português) | ✅ | ✅ API Key | ❌ | Fase 3 |
+| **Gemini** | LLM (explicações em português) | ✅ | ✅ API Key | ❌ | Fase 3 |
 | **Kaggle** | Download do Book-Crossing Dataset | ✅ | ❌ | ❌ | Fase 1 |
 | **Open Library** | Enriquecer gêneros dos livros | ❌ | ❌ | ❌ | Fase 1 |
 | **GitHub** | Repositório + portfólio | ✅ (já tem) | ❌ | ❌ | Fase 6 |
@@ -17,7 +17,7 @@ Guia completo de tudo que você precisa criar/configurar **antes** de começar a
 | **Render** | Deploy do backend | ✅ | ❌ (via dashboard) | ❌ | Fase 6 |
 
 > [!TIP]
-> As Fases 1–5 (desenvolvimento local) precisam apenas de **Node.js**, **Groq** e **Kaggle**. Turso e Render são só para a Fase 6 (deploy). Você pode criar essas contas depois.
+> As Fases 1–5 (desenvolvimento local) precisam apenas de **Node.js**, **Gemini** e **Kaggle**. Turso e Render são só para a Fase 6 (deploy). Você pode criar essas contas depois.
 
 ---
 
@@ -42,48 +42,38 @@ npm --version     # deve retornar 10.x.x+
 
 ---
 
-## 2. 🟠 Groq — API de LLM (Explicações em Linguagem Natural)
+## 2. 🟠 Gemini — API de LLM (Explicações em Linguagem Natural)
 
 **Quando:** Necessário a partir da Fase 3 (mas recomendo criar agora para já ter a key)
 
-### Por que o Groq?
-- Cadastro **sem cartão de crédito**
-- Inferência extremamente rápida (hardware LPU dedicado)
-- Tier gratuito suficiente para demo (~30 req/min, ~1.000 req/dia)
-- API compatível com formato OpenAI (troca de provedor futura é simples)
+### Por que o Gemini?
+- Cadastro **sem cartão de crédito** no Google AI Studio
+- Tier gratuito extremamente generoso (15 requisições por minuto)
+- Suporte nativo fantástico para o idioma português
+- SDK simples `@google/generative-ai`
 
 ### Passo a passo
 
-1. Acesse [https://console.groq.com/](https://console.groq.com/)
+1. Acesse [https://aistudio.google.com/](https://aistudio.google.com/)
 
-2. Clique em **"Sign Up"** (canto superior direito)
+2. Faça login com sua conta Google (Gmail) padrão
 
-3. Crie a conta — opções disponíveis:
-   - 📧 Email + senha
-   - 🔗 Google
-   - 🔗 GitHub (recomendado — já tem conta)
+3. Clique no botão **"Get API Key"** (no canto superior esquerdo ou central)
 
-4. Após login, vá em **"API Keys"** no menu lateral esquerdo
-   - Ou acesse diretamente: [https://console.groq.com/keys](https://console.groq.com/keys)
+4. Clique em **"Create API Key"**
+   - Escolha se deseja criar em um projeto existente ou em um novo projeto
+   - Clique em **"Create API Key in new project"**
 
-5. Clique em **"Create API Key"**
-   - **Nome:** `marketplace-do-livro` (ou qualquer nome descritivo)
-   - Clique **"Submit"**
+5. **⚠️ COPIE A CHAVE GERADA** e salve em local seguro.
 
-6. **⚠️ COPIE A CHAVE AGORA** — ela só é exibida uma vez!
-   - Formato: `gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx`
-   - Guarde em um lugar seguro (gerenciador de senhas, nota privada)
-
-7. Confirme o modelo disponível:
-   - Acesse [https://console.groq.com/docs/models](https://console.groq.com/docs/models)
-   - Procure por `openai/gpt-oss-20b` (rápido, gratuito) ou `llama-3.3-70b-versatile`
-   - **O catálogo de modelos gratuitos muda com frequência** — anote qual está disponível
+6. O modelo recomendado para uso gratuito e rápido é o:
+   - **`gemini-1.5-flash`**
 
 ### O que você terá
 
 ```env
-GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-GROQ_MODEL=openai/gpt-oss-20b
+GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GEMINI_MODEL=gemini-1.5-flash
 ```
 
 > [!WARNING]
@@ -282,8 +272,8 @@ TURSO_AUTH_TOKEN=eyJhbGciOiJFZDI1NTE5Iiwi...
    | Key | Value |
    |---|---|
    | `DATABASE_URL` | `file:./dev.db` (o Prisma precisa, mas usaremos Turso via adapter) |
-   | `GROQ_API_KEY` | `gsk_xxxxx...` (sua chave) |
-   | `GROQ_MODEL` | `openai/gpt-oss-20b` |
+   | `GEMINI_API_KEY` | `AIzaSyxxxxx...` (sua chave) |
+   | `GEMINI_MODEL` | `gemini-1.5-flash` |
    | `TURSO_DATABASE_URL` | `libsql://marketplace-livro-...turso.io` |
    | `TURSO_AUTH_TOKEN` | `eyJhbGci...` |
    | `PORT` | `10000` (padrão do Render) |
@@ -303,9 +293,9 @@ Após completar todos os passos acima, seu `.env` local terá:
 # ── Banco de Dados ──────────────────────────────────
 DATABASE_URL="file:./dev.db"
 
-# ── Groq (LLM) ─────────────────────────────────────
-GROQ_API_KEY="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-GROQ_MODEL="openai/gpt-oss-20b"
+# ── Gemini (LLM) ────────────────────────────────────
+GEMINI_API_KEY="AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+GEMINI_MODEL="gemini-1.5-flash"
 
 # ── Servidor ────────────────────────────────────────
 PORT=3000
@@ -320,8 +310,8 @@ PORT=3000
 ## ✅ Checklist — O que fazer agora (antes da Fase 1)
 
 - [ ] Confirmar que **Node.js 18+** está instalado (`node --version`)
-- [ ] Criar conta no **Groq** e gerar a API Key
-- [ ] Confirmar modelo disponível em [console.groq.com/docs/models](https://console.groq.com/docs/models)
+- [ ] Criar conta no **Google AI Studio** e gerar a API Key do Gemini
+- [ ] Confirmar que o modelo padrão no `.env` está como `gemini-1.5-flash`
 - [ ] Criar conta no **Kaggle** (se não tiver)
 - [ ] Baixar o **Book-Crossing Dataset** do Kaggle
 - [ ] *(Opcional agora)* Criar repositório no **GitHub**

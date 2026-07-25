@@ -37,9 +37,9 @@ describe('Sanity Tests - Step 1.1', () => {
     expect(failResult.success).toBe(false);
   });
 
-  test('Groq SDK imports correctly', () => {
-    const Groq = require('groq-sdk');
-    expect(Groq).toBeDefined();
+  test('Gemini Gen AI SDK imports correctly', () => {
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    expect(GoogleGenerativeAI).toBeDefined();
   });
 
   test('Helmet and Cors import correctly', () => {

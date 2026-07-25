@@ -2,7 +2,7 @@
   <img src="https://img.shields.io/badge/Node.js-20.17.0-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js 20.17.0"/>
   <img src="https://img.shields.io/badge/TensorFlow.js-Two--Tower-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" alt="TensorFlow.js"/>
   <img src="https://img.shields.io/badge/Prisma-SQLite%20%7C%20Turso-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma"/>
-  <img src="https://img.shields.io/badge/Groq-LLM%20Explanations-000000?style=for-the-badge" alt="Groq LLM"/>
+  <img src="https://img.shields.io/badge/Gemini-LLM%20Explanations-000000?style=for-the-badge&logo=google&logoColor=white" alt="Gemini LLM"/>
   <img src="https://img.shields.io/badge/pnpm-9.x-F69220?style=for-the-badge&logo=pnpm&logoColor=white" alt="pnpm 9.x"/>
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT License"/>
 </p>
@@ -11,7 +11,7 @@
 
 > Sistema de recomendação de livros com aprendizado de máquina em tempo real e explicações em linguagem natural.
 
-O **MarketPlace do Livro** é um e-commerce educacional que combina uma **rede neural Two-Tower** (TensorFlow.js) para calcular compatibilidade entre leitores e livros, com um **módulo de explicabilidade via LLM** (Groq) que traduz os scores numéricos em justificativas personalizadas em português.
+O **MarketPlace do Livro** é um e-commerce educacional que combina uma **rede neural Two-Tower** (TensorFlow.js) para calcular compatibilidade entre leitores e livros, com um **módulo de explicabilidade via LLM** (Gemini API) que traduz os scores numéricos em justificativas personalizadas em português.
 
 Desenvolvido como projeto de portfólio, demonstra a integração end-to-end de machine learning, APIs de linguagem natural e uma interface web responsiva — tudo rodando em serviços gratuitos.
 
@@ -22,10 +22,10 @@ Desenvolvido como projeto de portfólio, demonstra a integração end-to-end de 
 | Feature | Descrição |
 |---|---|
 | 🧠 **Recomendação por IA** | Rede neural Two-Tower que aprende padrões de compra e calcula scores de 0% a 100% de compatibilidade |
-| 💬 **Explicabilidade** | LLM (via Groq) gera justificativas em português natural para cada recomendação |
+| 💬 **Explicabilidade** | LLM (via Gemini API) gera justificativas em português natural para cada recomendação |
 | 🔄 **Reordenação em tempo real** | O catálogo se reorganiza automaticamente após cada compra ou exclusão |
 | 🔶 **Cold Start Fallback** | Usuários sem histórico recebem recomendações baseadas em popularidade |
-| 🛡️ **Resiliência** | Fallback textual automático quando a API do Groq estiver indisponível |
+| 🛡️ **Resiliência** | Fallback textual automático quando a Gemini API estiver indisponível |
 | 📊 **Contexto analítico** | Estatísticas agregadas da loja injetadas nos prompts para recomendações mais ricas |
 
 ---
@@ -45,7 +45,7 @@ flowchart TB
 
     subgraph BE["Backend — Node.js + Express"]
         TF["TensorFlow.js Two-Tower<br/>(score e reordenação)"]
-        LLM["Módulo Explicativo (LLM via Groq)"]
+        LLM["Módulo Explicativo (LLM via Gemini API)"]
     end
 
     BE --> DB
@@ -77,8 +77,8 @@ A rede processa separadamente os dados do **usuário** (torre esquerda) e do **l
 | **Runtime** | Node.js 20.17.0 (exato, fixado via `.nvmrc`) | Servidor backend |
 | **Pacotes** | pnpm 9.x (com dependências exatas no `package.json`) | Gerenciador de pacotes reprodutíveis |
 | **Framework** | Express.js (com `helmet`, `cors` e `express-rate-limit`) | API REST segura |
-| **IA / ML** | `@tensorflow/tfjs-node` (versão exata pré-compilada) | Modelo Two-Tower (treinamento + inferência) |
-| **LLM** | Groq SDK (API compatível OpenAI) | Explicações em linguagem natural |
+| **IA / ML** | `@tensorflow/tfjs` (versão exata pré-compilada) | Modelo Two-Tower (treinamento + inferência) |
+| **LLM** | Gemini SDK (`@google/generative-ai`) | Explicações em linguagem natural |
 | **ORM** | Prisma Client | Acesso ao banco de dados |
 | **Banco (dev)** | SQLite3 | Desenvolvimento local |
 | **Banco (prod)** | Turso (libSQL) | Persistência em produção via driver adapter |
@@ -105,7 +105,7 @@ marketplace-do-livro/
 │   │   ├── encoder.js         # Normalização + One-Hot Encoding
 │   │   └── recommendationModel.js  # Arquitetura Two-Tower + treino + inferência
 │   ├── services/
-│   │   └── llmService.js      # Integração com Groq + cache + fallback
+│   │   └── llmService.js      # Integração com Gemini + cache + fallback
 │   ├── routes/
 │   │   ├── users.js           # GET /api/users
 │   │   ├── recommendations.js # GET /api/recommendations/:userId
@@ -134,7 +134,7 @@ marketplace-do-livro/
 
 - [Node.js](https://nodejs.org/) na versão exata fixada em `.nvmrc` (use `nvm use` para garantir a mesma versão do time/CI — importante porque `@tensorflow/tfjs-node` compila bindings nativos e é sensível a mudanças de versão do Node)
 - [pnpm](https://pnpm.io/) 9+ (via [Corepack](https://nodejs.org/api/corepack.html): `corepack enable`) — gerenciador de pacotes oficial do projeto
-- Conta gratuita no [Groq](https://console.groq.com/) (para a chave de API)
+- Conta gratuita no [Google AI Studio](https://aistudio.google.com/) (para a chave de API Gemini)
 
 > 💡 O projeto usa **pnpm** (não npm/yarn) com versões exatas no `package.json` e `pnpm-lock.yaml` versionado no git — isso evita reinstalações que resolvem versões diferentes de dependência entre máquinas e quebram o binding nativo do TensorFlow.js. Não delete nem ignore o lockfile.
 
@@ -153,7 +153,7 @@ pnpm install --frozen-lockfile
 
 # 4. Configure as variáveis de ambiente
 cp .env.example .env
-# Edite o .env e adicione sua GROQ_API_KEY
+# Edite o .env e adicione sua GEMINI_API_KEY
 
 # 5. Inicialize o banco de dados
 pnpm exec prisma migrate dev --name init
@@ -182,13 +182,13 @@ Crie um arquivo `.env` na raiz do projeto (use `.env.example` como base):
 | Variável | Descrição | Obrigatória | Default |
 |---|---|---|---|
 | `DATABASE_URL` | URL de conexão do banco | ✅ Sempre | `file:./dev.db` |
-| `GROQ_API_KEY` | Chave de autenticação do Groq | ✅ Sempre | — |
-| `GROQ_MODEL` | Modelo de linguagem no Groq | ✅ Sempre | `openai/gpt-oss-20b` |
+| `GEMINI_API_KEY` | Chave de autenticação do Gemini | ✅ Sempre | — |
+| `GEMINI_MODEL` | Modelo de linguagem no Gemini | ✅ Sempre | `gemini-1.5-flash` |
 | `TURSO_DATABASE_URL` | URL do banco Turso | 🔶 Produção | — |
 | `TURSO_AUTH_TOKEN` | Token de autenticação Turso | 🔶 Produção | — |
 | `PORT` | Porta do servidor Express | Opcional | `3000` |
 
-> 💡 **Dica:** Confirme os modelos gratuitos disponíveis em [console.groq.com/docs/models](https://console.groq.com/docs/models) — o catálogo muda com frequência.
+> 💡 **Dica:** O modelo padrão recomendado é o `gemini-1.5-flash` por sua velocidade e gratuidade completa sem cartão de crédito no AI Studio.
 
 ---
 
@@ -336,7 +336,7 @@ O projeto está dividido em **6 fases sequenciais**, pensadas para execução in
 |---|---|
 | **Dataset esparso / cold start** | Fallback de popularidade para usuários sem histórico |
 | **Two-Tower com poucos dados** | Modelo pode não generalizar tão bem quanto em produção real — esperado e documentado para fins didáticos |
-| **Limites de taxa do Groq** | Cache de justificativas + fallback textual automático |
+| **Limites de taxa do Gemini** | Cache de justificativas + fallback textual automático |
 | **Cold start do Render** | Primeira requisição após inatividade leva ~30–60s — **não é um bug**, é o free tier "acordando" |
 | **Enriquecimento de gênero incompleto** | Nem todo ISBN retorna subjects na Open Library — fallback "Não classificado" |
 

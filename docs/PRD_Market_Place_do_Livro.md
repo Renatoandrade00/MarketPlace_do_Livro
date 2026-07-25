@@ -31,7 +31,7 @@ flowchart TB
 
     subgraph BE["Backend — Node.js + Express"]
         TF["TensorFlow.js Two-Tower<br/>(score e reordenação)"]
-        LLM["Módulo Explicativo (LLM via Groq)"]
+        LLM["Módulo Explicativo (LLM via Gemini API)"]
     end
 
     BE --> DB
@@ -60,12 +60,12 @@ Estas decisões foram fechadas antes do detalhamento das fases, para evitar ambi
 
 | Decisão | Escolha | Motivo |
 |---|---|---|
-| **API de LLM** | **Groq** (API compatível com OpenAI) | Cadastro sem cartão de crédito, inferência muito rápida (hardware LPU), tier gratuito suficiente para uso didático/demo. Modelo sugerido no momento da implementação: `openai/gpt-oss-20b` (rápido, dentro do tier gratuito) ou `llama-3.3-70b-versatile` (mais qualidade textual, se ainda disponível — **confirme em `console.groq.com/docs/models`, pois o catálogo de modelos gratuitos muda com frequência**). |
+| **API de LLM** | **Gemini API** (Google AI Studio) | Cadastro sem cartão de crédito, tier gratuito generoso (15 RPM) e excelente qualidade textual para português. Modelo padrão: `gemini-1.5-flash` (rápido, gratuito, sem exigência de cartão de crédito no AI Studio). |
 | **Fonte de dados (seed)** | **Book-Crossing Dataset** (subconjunto filtrado) | Dataset real e amplamente usado em sistemas de recomendação, com dados demográficos de usuário (idade, localização) que já combinam com o schema `User` proposto. |
 | **Deploy** | **Render** (backend/API) + **Turso** (banco persistente via driver adapter libSQL do Prisma) | Render é o único dos PaaS "populares" com tier gratuito sem cartão de crédito; porém seu disco é efêmero, então o SQLite local não sobrevive a reinícios — o Turso resolve isso mantendo compatibilidade total com Prisma e com o dialeto SQLite. |
-| **Proteção de rotas administrativas** | `express-rate-limit` em `POST /api/model/train` e `POST /api/llm/refresh-context`, opcionalmente reforçado por um header simples `x-admin-token` comparado a uma env var (`ADMIN_TOKEN`) | O projeto não tem autenticação (decisão de escopo, ver Seção 4 e SPEC seção 10) — sem isso, qualquer pessoa que encontre a URL do Render pode disparar retreino (operação cara de CPU) em loop ou estourar a cota diária gratuita do Groq. Rate-limit resolve os dois riscos sem exigir um sistema de auth completo, fora de escopo aqui. |
+| **Proteção de rotas administrativas** | `express-rate-limit` em `POST /api/model/train` e `POST /api/llm/refresh-context`, opcionalmente reforçado por um header simples `x-admin-token` comparado a uma env var (`ADMIN_TOKEN`) | O projeto não tem autenticação (decisão de escopo, ver Seção 4 e SPEC seção 10) — sem isso, qualquer pessoa que encontre a URL do Render pode disparar retreino (operação cara de CPU) em loop ou estourar a cota diária gratuita do Gemini. Rate-limit resolve os dois riscos sem exigir um sistema de auth completo, fora de escopo aqui. |
 
-> ⚠️ **Nota sobre o Groq:** o tier gratuito tem limites de taxa (na ordem de ~30 requisições/min e ~1.000 requisições/dia para a maioria dos modelos). Para uma demo de portfólio isso é suficiente, mas o `llmService.js` deve ter um *fallback* textual simples (ex.: template com os dados do livro) caso a API retorne erro 429, para a UI nunca quebrar.
+> ⚠️ **Nota sobre o Gemini:** o tier gratuito tem limites de taxa (15 requisições/min e 1.500 requisições/dia). Para uma demo de portfólio isso é suficiente, mas o `llmService.js` deve ter um *fallback* textual simples (ex.: template com os dados do livro) caso a API retorne erro 429 ou cota estourada, para a UI nunca quebrar.
 
 > ⚠️ **Nota sobre o Render free tier:** o serviço "dorme" após um período de inatividade e leva ~30–60s para responder à primeira requisição seguinte. Isso é esperado — documente no README para quem for testar a demo, para não parecer um bug.
 
@@ -82,7 +82,7 @@ Para otimizar o uso do agente do **Antigravity** e manter o contexto de cada ses
 * **Step 1.1: Inicialização do Projeto**
   * Criar a estrutura de pastas (ver seção 5).
   * Gerenciador de pacotes: **pnpm** (não npm/yarn), habilitado via Corepack (`corepack enable`). Declarar `"packageManager": "pnpm@9.x.x"` no `package.json` para fixar a versão do próprio pnpm entre máquinas.
-  * Configurar o `package.json` com as dependências essenciais: `express`, `@prisma/client`, `prisma`, `@tensorflow/tfjs-node`, `csv-parser`, `dotenv`, `groq-sdk`, `zod` (validação de entrada), `helmet`, `cors`, `express-rate-limit`. **Todas as versões devem ser exatas** (sem `^`/`~`) — importante porque `@tensorflow/tfjs-node` compila bindings nativos e `@prisma/client`/`prisma` precisam estar sempre na mesma versão entre si.
+  * Configurar o `package.json` com as dependências essenciais: `express`, `@prisma/client`, `prisma`, `@tensorflow/tfjs`, `csv-parser`, `dotenv`, `@google/generative-ai`, `zod` (validação de entrada), `helmet`, `cors`, `express-rate-limit`. **Todas as versões devem ser exatas** (sem `^`/`~`) — importante para garantir reprodutibilidade.
   * Criar `.npmrc` (`save-exact=true`, `engine-strict=true`) e `.nvmrc` com a versão exata do Node (ex. `20.17.0`), refletida também no campo `engines` do `package.json`.
   * Criar `.env.example` (sem valores reais) e `.gitignore` (incluindo `.env`, `node_modules`, `*.db`, `data/raw/*.zip`). O `pnpm-lock.yaml`, ao contrário do `.env`, **deve ser versionado** — ele é o que garante instalações reprodutíveis entre sua máquina, o Antigravity e o deploy no Render.
 
@@ -141,9 +141,9 @@ Para otimizar o uso do agente do **Antigravity** e manter o contexto de cada ses
   * `POST /api/model/train` — (nova) dispara o retreino completo do modelo TensorFlow, de forma assíncrona/administrativa.
 
 * **Step 3.2: Módulo de Explicabilidade (LLM Service)**
-  * Criar `src/services/llmService.js` usando o SDK do Groq (compatível com o formato OpenAI — trocar de provedor no futuro exige só mudar a *base URL* e a chave).
+  * Criar `src/services/llmService.js` usando o SDK da Gemini API (`@google/generative-ai`).
   * Prompt dinâmico combinando: perfil do leitor + atributos do livro + score do Two-Tower (em %) + contexto analítico agregado (ver Step 3.3) → justificativa curta e amigável em português.
-  * Implementar *fallback* textual simples (template sem LLM) para quando a API do Groq falhar ou estourar o limite de requisições.
+  * Implementar *fallback* textual simples (template sem LLM) para quando a Gemini API falhar ou estourar o limite de requisições.
 
 * **Step 3.3: Endpoint de Atualização de Contexto Analítico da LLM**
   * `POST /api/llm/refresh-context` — **não é treinamento/fine-tuning do modelo de linguagem.** O que esse endpoint faz é recalcular estatísticas agregadas do banco (gêneros mais vendidos, faixa etária predominante, autores mais lidos etc.) e guardá-las para serem injetadas como contexto extra nos prompts seguintes — uma recalibração de contexto, não um retreino de LLM. Nomear e documentar isso com clareza evita que o agente do Antigravity (ou outro dev) tente implementar fine-tuning de verdade, o que seria caro e desnecessário aqui.
@@ -155,7 +155,7 @@ Para otimizar o uso do agente do **Antigravity** e manter o contexto de cada ses
 * **Step 4.1: Layout Base e Componentes**
   * Topbar com dropdown de cliente.
   * Botão **"Atualizar Contexto"** (renomeado de "Treinar LLM", ver Step 3.3).
-  * Estados de carregamento e mensagens de erro visíveis (especialmente relevantes dado o *fallback* do Groq e o "acordar" do Render).
+  * Estados de carregamento e mensagens de erro visíveis (especialmente relevantes dado o *fallback* do Gemini e o "acordar" do Render).
 
 * **Step 4.2: Grid Dinâmico de Livros**
   * Título, Autor, Ano, Gênero.
@@ -192,7 +192,7 @@ Para otimizar o uso do agente do **Antigravity** e manter o contexto de cada ses
 
 * **Step 6.2: Deploy do Backend no Render**
   * Criar um *Web Service* gratuito conectado ao repositório GitHub.
-  * Configurar as variáveis de ambiente no painel do Render: `GROQ_API_KEY`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`.
+  * Configurar as variáveis de ambiente no painel do Render: `GEMINI_API_KEY`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`.
   * Build command: `npm install && npx prisma generate`. Start command: apontar para o entrypoint do servidor Express.
 
 * **Step 6.3: Frontend**
@@ -242,15 +242,15 @@ marketplace-do-livro/
 * **Node.js:** versão exata fixada em `.nvmrc` e no campo `engines` do `package.json` (ex. `20.17.0`) — não uma faixa aberta, para não quebrar o binding nativo do `@tensorflow/tfjs-node` entre máquinas diferentes
 * **Gerenciador de pacotes:** pnpm 9+ (via Corepack), com `pnpm-lock.yaml` versionado e todas as dependências fixadas em versão exata (sem `^`/`~`) no `package.json`
 * **Banco de Dados:** SQLite3 (dev) / Turso — libSQL (produção)
-* **Contas gratuitas necessárias:** Groq (chave de API), Turso, Render (para deploy)
-* **Variáveis de ambiente (`.env`):** `DATABASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `PORT` — todas validadas no boot do servidor (`server.js` deve encerrar com erro claro se alguma obrigatória estiver ausente, em vez de falhar silenciosamente na primeira chamada que a usar)
+* **Contas gratuitas necessárias:** Google AI Studio (chave de API Gemini), Turso, Render (para deploy)
+* **Variáveis de ambiente (`.env`):** `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `PORT` — todas validadas no boot do servidor (`server.js` deve encerrar com erro claro se alguma obrigatória estiver ausente, em vez de falhar silenciosamente na primeira chamada que a usar)
 
 ---
 
 ## 7. Riscos e Limitações Conhecidas
 * **Dataset esparso / cold start:** mesmo após a filtragem, a densidade de interações é baixa — mitigado com o fallback de popularidade (Step 2.3).
 * **Two-Tower com poucos dados:** o modelo pode não generalizar tão bem quanto em produção real; isso é esperado e aceitável para fins didáticos — vale deixar isso explícito no README como uma limitação conhecida, não escondida.
-* **Limites de taxa do Groq:** uso intenso da demo pode esbarrar no tier gratuito — mitigado com cache de justificativas já geradas e fallback textual.
+* **Limites de taxa do Gemini:** uso intenso da demo pode esbarrar no tier gratuito — mitigado com cache de justificativas já geradas e fallback textual.
 * **Cold start de infraestrutura (Render):** primeira requisição após inatividade demora ~30–60s.
 * **Enriquecimento de gênero incompleto:** nem todo ISBN retorna "subjects" na Open Library — fallback "Não classificado" é esperado para uma parcela dos livros.
 * **Abuso de rotas públicas sem autenticação:** como o projeto não implementa login (decisão de escopo), qualquer pessoa que descubra a URL pública no Render pode chamar `POST /api/model/train` (operação cara de CPU) ou `POST /api/llm/refresh-context` repetidamente — mitigado com `express-rate-limit` nessas rotas e, opcionalmente, um token administrativo simples (ver Seção 3 e SPEC seção 4.4.1).

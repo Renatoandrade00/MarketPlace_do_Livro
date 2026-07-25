@@ -152,7 +152,7 @@ Manter uma flag em memória `isTraining: boolean`. Se uma segunda chamada de tre
 
 ### 4.4.1 Proteção contra abuso (rotas administrativas)
 
-`POST /api/model/train` e `POST /api/llm/refresh-context` não exigem autenticação (decisão de escopo, ver seção 10). Como o projeto é público (deploy no Render) e não há login, essas duas rotas ficam expostas a qualquer um que descubra a URL — a primeira dispara uma operação cara de CPU, a segunda consome cota do Groq indiretamente ao alimentar prompts futuros. Mitigação obrigatória:
+`POST /api/model/train` e `POST /api/llm/refresh-context` não exigem autenticação (decisão de escopo, ver seção 10). Como o projeto é público (deploy no Render) e não há login, essas duas rotas ficam expostas a qualquer um que descubra a URL — a primeira dispara uma operação cara de CPU, a segunda consome cota do Gemini indiretamente ao alimentar prompts futuros. Mitigação obrigatória:
 
 * `express-rate-limit` aplicado especificamente a essas duas rotas (ex.: 1 requisição/minuto por IP).
 * Opcionalmente, um header simples `x-admin-token` comparado à env var `ADMIN_TOKEN` — suficiente para o escopo didático, sem exigir um sistema de autenticação completo.
@@ -254,10 +254,10 @@ Recalcula estatísticas agregadas (não é fine-tuning — ver PRD seção 3.3).
 ### 6.1 Cliente
 
 ```js
-const Groq = require("groq-sdk");
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 ```
-Modelo: variável de ambiente `GROQ_MODEL` (default sugerido `openai/gpt-oss-20b`; confirme disponibilidade em `console.groq.com/docs/models` antes de fixar). `temperature: 0.7`, `max_tokens: 100`.
+Modelo: variável de ambiente `GEMINI_MODEL` (default sugerido `gemini-1.5-flash`). `temperature` e outras configurações podem ser passadas nas opções do modelo.
 
 ### 6.2 Prompt
 
@@ -286,7 +286,7 @@ Chave: `` `${userId}-${bookId}-${Math.round(score * 20)}` `` (arredonda o score 
 
 ### 6.4 Fallback (sem chamar a API)
 
-Usado quando a chamada ao Groq falhar (erro de rede, `429`, timeout):
+Usado quando a chamada ao Gemini falhar (erro de rede, `429`, timeout):
 ```
 "Este livro tem {scorePercent}% de compatibilidade com o seu perfil, com base no seu histórico de compras."
 ```
@@ -350,7 +350,7 @@ tests/
 ├── sanity.test.js          // Step 1.1: Valida inicialização, imports de bibliotecas críticas e variáveis
 ├── encoder.test.js         // Step 2.1: onehot() cai no slot "Outro" para valor desconhecido; normalização
 ├── purchases.route.test.js // Step 3.1: POST cria, DELETE remove, 409 em compra duplicada, 404 em usuário inexistente
-└── llmService.test.js      // Step 3.2: fallback é usado quando o client do Groq lança erro (mockado)
+└── llmService.test.js      // Step 3.2: fallback é usado quando o client do Gemini lança erro (mockado)
 ```
 Banco de teste: SQLite em arquivo separado (`file:./test.db`), recriado a cada execução via `prisma migrate reset --force` no `beforeAll`.
 
@@ -362,12 +362,12 @@ Banco de teste: SQLite em arquivo separado (`file:./test.db`), recriado a cada e
 | Variável | Uso | Obrigatória em |
 |---|---|---|
 | `DATABASE_URL` | `file:./dev.db` (dev) ou string de conexão Turso (prod) | sempre |
-| `GROQ_API_KEY` | autenticação no Groq | sempre |
-| `GROQ_MODEL` | nome do modelo Groq (ver 6.1) | sempre |
+| `GEMINI_API_KEY` | autenticação na Gemini API | sempre |
+| `GEMINI_MODEL` | nome do modelo Gemini (ver 6.1) | sempre |
 | `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` | driver adapter libSQL | produção (Render) |
 | `PORT` | porta do Express | sempre (default 3000) |
 
-> ⚠️ O servidor deve validar todas as variáveis obrigatórias no boot (`server.js`) e encerrar com uma mensagem de erro clara (`process.exit(1)`) se alguma estiver ausente, em vez de falhar silenciosamente na primeira chamada que a usar. Nenhum log deve imprimir `process.env` inteiro nem o corpo bruto de erros do SDK do Groq sem antes remover dados de autenticação.
+> ⚠️ O servidor deve validar todas as variáveis obrigatórias no boot (`server.js`) e encerrar com uma mensagem de erro clara (`process.exit(1)`) se alguma estiver ausente, em vez de falhar silenciosamente na primeira chamada que a usar. Nenhum log deve imprimir `process.env` inteiro nem o corpo bruto de erros do SDK do Gemini sem antes remover dados de autenticação.
 
 ---
 

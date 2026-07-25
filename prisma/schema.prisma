@@ -1,0 +1,39 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  nome      String
+  idade     Int
+  sexo      String     // "M" | "F" | "Outro"
+  pais      String
+  cidade    String
+  purchases Purchase[]
+}
+
+model Book {
+  id        Int        @id @default(autoincrement())
+  isbn      String?    @unique
+  nome      String
+  autor     String
+  ano       Int
+  genero    String
+  purchases Purchase[]
+}
+
+model Purchase {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  bookId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId]) // um usuário não "compra" o mesmo livro duas vezes
+}

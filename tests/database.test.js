@@ -13,7 +13,7 @@ let prisma;
 describe('Database Tests - Step 1.2', () => {
   beforeAll(() => {
     // Sync schema to the test database
-    execSync('npx prisma db push --accept-data-loss', {
+    execSync('npx prisma db push --accept-data-loss --skip-generate', {
       env: { ...process.env, DATABASE_URL: testDbUrl },
       stdio: 'inherit'
     });

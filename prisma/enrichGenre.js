@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-
 const PROCESSED_DIR = path.join(__dirname, '../data/processed');
 const RAW_BOOKS_PATH = path.join(PROCESSED_DIR, 'books_raw.json');
 const CACHE_PATH = path.join(PROCESSED_DIR, 'generos.json');
@@ -162,6 +161,6 @@ module.exports = {
   run
 };
 
-if (require.main === module) {
+if (require.main === module && !process.env.VITEST) {
   run().catch(console.error);
 }

@@ -1,0 +1,44 @@
+# Environment files
+.env
+.env.local
+
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# Python Virtual Environments (used by tools like graphify)
+.venv/
+venv/
+ENV/
+env/
+
+# Databases & local sqlite files
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+dev.db
+test.db
+
+# Raw data and large datasets
+data/raw/*
+!data/raw/.gitkeep
+
+# Graphify Cache (to avoid committing large local parse caches)
+graphify-out/cache/
+graphify-out/2026-*/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor and system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

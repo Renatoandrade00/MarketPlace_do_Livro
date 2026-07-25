@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketplace do Livro — Sistema Inteligente de Recomendação</title>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- CSS Principal -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Background Decorativo Fluido -->
+  <div class="bg-gradient-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+  </div>
+
+  <header class="app-header">
+    <div class="container">
+      <div class="logo-area">
+        <span class="badge">IA Engine</span>
+        <h1>Marketplace <span>do Livro</span></h1>
+      </div>
+      <div class="user-selector-wrapper">
+        <label for="user-select">Leitor Ativo:</label>
+        <div class="custom-select">
+          <select id="user-select">
+            <option value="">Selecione um usuário...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container app-body">
+    <!-- Estado Inicial / Sem Usuário Selecionado -->
+    <section id="welcome-view" class="welcome-card card">
+      <div class="welcome-content">
+        <div class="icon-circle">📖</div>
+        <h2>Selecione um Leitor para Começar</h2>
+        <p>Escolha um dos perfis demográficos no menu superior para gerar recomendações personalizadas com base na rede neural Two-Tower e receber explicações geradas por IA.</p>
+      </div>
+    </section>
+
+    <!-- Visualização Principal (Escondida por padrão) -->
+    <div id="main-view" class="dashboard-grid hidden">
+      
+      <!-- Coluna da Esquerda: Recomendações -->
+      <section class="recommendations-column">
+        <div class="section-header">
+          <h2>Recomendações Personalizadas</h2>
+          <div id="fallback-badge" class="badge-warning hidden">Popularidade (Fallback)</div>
+        </div>
+
+        <div id="fallback-warning" class="warning-alert hidden">
+          <span class="alert-icon">⚠️</span>
+          <p><strong>Nota:</strong> Estas recomendações são baseadas em popularidade geral (cold-start ou usuário sem compras/treino).</p>
+        </div>
+
+        <!-- Grid de Livros Recomendados -->
+        <div id="recommendations-grid" class="books-grid">
+          <!-- Inserido dinamicamente via JS -->
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="recs-loading" class="loader-wrapper hidden">
+          <div class="spinner"></div>
+          <p>Consultando a rede neural Two-Tower...</p>
+        </div>
+      </section>
+
+      <!-- Coluna da Direita: Histórico, Painel Administrativo -->
+      <aside class="sidebar-column">
+        
+        <!-- Bloco de Perfil Selecionado -->
+        <section class="profile-card card">
+          <h3>Perfil do Leitor</h3>
+          <div class="profile-details">
+            <div class="detail-item"><strong>Idade:</strong> <span id="profile-age">-</span></div>
+            <div class="detail-item"><strong>Sexo:</strong> <span id="profile-sex">-</span></div>
+            <div class="detail-item"><strong>Cidade:</strong> <span id="profile-city">-</span></div>
+            <div class="detail-item"><strong>País:</strong> <span id="profile-country">-</span></div>
+          </div>
+        </section>
+
+        <!-- Histórico de Compras -->
+        <section class="card history-card">
+          <h3>Histórico de Compras</h3>
+          <div id="history-loading" class="loader-wrapper hidden">
+            <div class="spinner spinner-small"></div>
+          </div>
+          <ul id="purchase-history-list" class="history-list">
+            <!-- Inserido dinamicamente via JS -->
+          </ul>
+          <p id="no-purchases-msg" class="empty-state">Nenhum livro adquirido ainda.</p>
+        </section>
+
+        <!-- Painel de Gerenciamento do Modelo (Admin) -->
+        <section class="card admin-card">
+          <h3>Mecanismo de IA & LLM</h3>
+          <div class="admin-status">
+            <div class="status-item">
+              <span>Status do Modelo:</span>
+              <span id="model-status" class="status-badge status-never-trained">never_trained</span>
+            </div>
+            <div class="status-item">
+              <span>Último Treino:</span>
+              <span id="model-last-train">-</span>
+            </div>
+            <div class="status-item">
+              <span>Perda (Loss) / Val:</span>
+              <span id="model-metrics">-</span>
+            </div>
+          </div>
+
+          <div class="admin-actions">
+            <button id="btn-train-model" class="btn btn-primary">
+              <span class="btn-text">Retreinar Modelo</span>
+              <div class="btn-loader hidden"></div>
+            </button>
+            <button id="btn-refresh-llm" class="btn btn-secondary">
+              <span class="btn-text">Atualizar Contexto LLM</span>
+              <div class="btn-loader hidden"></div>
+            </button>
+          </div>
+        </section>
+
+      </aside>
+
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="container">
+      <p>&copy; 2026 Marketplace do Livro. Desenvolvido com TensorFlow.js, Express, SQLite e Google Gemini.</p>
+    </div>
+  </footer>
+
+  <!-- JS Principal -->
+  <script src="app.js"></script>
+</body>
+</html>

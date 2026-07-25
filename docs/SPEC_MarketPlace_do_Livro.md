@@ -335,15 +335,25 @@ Todo dado renderizado no grid de livros (`nome`, `autor`, `genero` e, especialme
 
 ---
 
-## 8. Testes Automatizados (exemplos concretos)
+## 8. Testes Automatizados e Estratégia de Teste Progressivo
 
+### 8.1 Estratégia de Teste Progressivo/Cumulativo
+Para garantir a estabilidade do sistema e evitar regressões, o arnês de testes automatizados deve ser executado e expandido de forma cumulativa em cada etapa de implementação:
+* **Fim do Step 1.1:** Executar testes de sanidade/inicialização (`tests/sanity.test.js`).
+* **Fim do Step 1.2:** Executar testes do banco de dados (Prisma/SQLite) cumulativamente com os testes do Step 1.1.
+* **Fim do Step 1.3:** Executar testes do script de seed e enriquecimento + testes do 1.1 e 1.2.
+* **Fim de cada Step subsequente:** A suíte de testes deve rodar a totalidade dos testes das etapas anteriores mais os novos testes da etapa atual. Qualquer quebra em etapas passadas invalida a conclusão da tarefa atual.
+
+### 8.2 Estrutura Concreta de Testes
 ```
 tests/
-├── encoder.test.js         // onehot() cai no slot "Outro" para valor desconhecido; normalização respeita min/max
-├── purchases.route.test.js // POST cria, DELETE remove, 409 em compra duplicada, 404 em usuário inexistente
-└── llmService.test.js      // fallback é usado quando o client do Groq lança erro (mockado)
+├── sanity.test.js          // Step 1.1: Valida inicialização, imports de bibliotecas críticas e variáveis
+├── encoder.test.js         // Step 2.1: onehot() cai no slot "Outro" para valor desconhecido; normalização
+├── purchases.route.test.js // Step 3.1: POST cria, DELETE remove, 409 em compra duplicada, 404 em usuário inexistente
+└── llmService.test.js      // Step 3.2: fallback é usado quando o client do Groq lança erro (mockado)
 ```
 Banco de teste: SQLite em arquivo separado (`file:./test.db`), recriado a cada execução via `prisma migrate reset --force` no `beforeAll`.
+
 
 ---
 

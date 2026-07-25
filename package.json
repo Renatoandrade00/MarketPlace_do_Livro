@@ -15,6 +15,9 @@
     "test:watch": "vitest tests",
     "train": "node src/ai/train.js"
   },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "dependencies": {
     "@prisma/client": "6.2.1",
     "@tensorflow/tfjs": "4.22.0",

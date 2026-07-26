@@ -112,6 +112,18 @@ async function refreshStoreContext(prisma) {
  * @param {boolean} params.usingFallback - Se está usando fallback de popularidade
  * @returns {Promise<string>} A justificativa
  */
+function getDynamicFallback(book, scorePercent) {
+  const templates = [
+    `Este livro de ${book.genero} tem ${scorePercent}% de compatibilidade com o seu perfil de leitura.`,
+    `Com base nas suas preferências, "${book.nome}" possui ${scorePercent}% de compatibilidade com você.`,
+    `Recomendamos este livro de ${book.autor} (${scorePercent}% de compatibilidade) com base no seu histórico.`,
+    `Que tal explorar "${book.nome}"? A IA calculou ${scorePercent}% de compatibilidade com o seu perfil.`,
+    `Afinidade de ${scorePercent}% de compatibilidade detectada para este livro do gênero ${book.genero}.`
+  ];
+  const index = book.id % templates.length;
+  return templates[index];
+}
+
 async function getJustification({ userId, user, book, score, usingFallback }) {
   const scorePercent = Math.round(score * 100);
 
@@ -126,7 +138,7 @@ async function getJustification({ userId, user, book, score, usingFallback }) {
     return justificationCache.get(cacheKey).texto;
   }
 
-  const fallbackText = `Este livro tem ${scorePercent}% de compatibilidade com o seu perfil, com base no seu histórico de compras.`;
+  const fallbackText = getDynamicFallback(book, scorePercent);
 
   // Se a API Key do Gemini não estiver configurada, retornar fallback imediatamente
   if (!genAI) {

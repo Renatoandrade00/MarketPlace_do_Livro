@@ -11,6 +11,8 @@
 
 > Sistema de recomendação de livros com aprendizado de máquina em tempo real e explicações em linguagem natural.
 
+🔗 **Link da Demo Online**: [marketplace-do-livro.onrender.com](https://marketplace-do-livro.onrender.com/)
+
 O **MarketPlace do Livro** é um e-commerce educacional que combina uma **rede neural Two-Tower** (TensorFlow.js) para calcular compatibilidade entre leitores e livros, com um **módulo de explicabilidade via LLM** (Gemini API) que traduz os scores numéricos em justificativas personalizadas em português.
 
 Desenvolvido como projeto de portfólio, demonstra a integração end-to-end de machine learning, APIs de linguagem natural e uma interface web responsiva — tudo rodando em serviços gratuitos.

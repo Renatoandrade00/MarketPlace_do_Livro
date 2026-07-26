@@ -8,10 +8,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('./services/db');
 const path = require('path');
-
-const prisma = new PrismaClient();
 const app = express();
 
 const {
@@ -139,8 +137,17 @@ app.get('/api/recommendations/:userId', generalLimiter, async (req, res) => {
 
     // Gerar as justificativas e montar a resposta
     const recommendedBooks = [];
-    // Limitar o retorno a no máximo 10 recomendações para a UI
-    const topRecommendations = recommendations.slice(0, 10);
+    
+    // Suportar limit via query parameter (default 10, máximo 50)
+    let limit = 10;
+    if (req.query.limit) {
+      const parsedLimit = parseInt(req.query.limit, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        limit = Math.min(parsedLimit, 50);
+      }
+    }
+
+    const topRecommendations = recommendations.slice(0, limit);
 
     for (const rec of topRecommendations) {
       const book = books.find(b => b.id === rec.bookId);

@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "@google/generative-ai": "0.24.1",
+    "@libsql/client": "0.17.4",
+    "@prisma/adapter-libsql": "6.2.1",
     "@prisma/client": "6.2.1",
     "@tensorflow/tfjs": "4.22.0",
     "cors": "2.8.5",

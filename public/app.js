@@ -9,7 +9,8 @@ const state = {
   recommendations: [],
   purchaseHistory: [],
   loading: false,
-  error: null
+  error: null,
+  recommendationsLimit: 10
 };
 
 // Elementos do DOM
@@ -26,6 +27,8 @@ const elRecommendationsGrid = document.getElementById('recommendations-grid');
 const elFallbackBadge = document.getElementById('fallback-badge');
 const elFallbackWarning = document.getElementById('fallback-warning');
 const elRecsLoading = document.getElementById('recs-loading');
+const elBtnShowMore = document.getElementById('btn-show-more');
+const elShowMoreContainer = document.getElementById('show-more-container');
 
 const elPurchaseHistoryList = document.getElementById('purchase-history-list');
 const elHistoryLoading = document.getElementById('history-loading');
@@ -76,6 +79,7 @@ async function selectUser(userId) {
   }
 
   state.currentUserId = Number(userId);
+  state.recommendationsLimit = 10;
   const user = state.users.find(u => u.id === state.currentUserId);
   
   if (user) {
@@ -104,9 +108,10 @@ async function loadRecommendations(userId) {
   elRecsLoading.classList.remove('hidden');
   elFallbackBadge.classList.add('hidden');
   elFallbackWarning.classList.add('hidden');
+  elShowMoreContainer.classList.add('hidden');
 
   try {
-    const res = await fetch(`/api/recommendations/${userId}`);
+    const res = await fetch(`/api/recommendations/${userId}?limit=${state.recommendationsLimit}`);
     if (!res.ok) throw new Error("Falha ao carregar recomendações.");
     
     const data = await res.json();
@@ -341,6 +346,7 @@ function renderRecommendations() {
   if (state.recommendations.length === 0) {
     elRecommendationsGrid.innerHTML = '<p class="empty-state">Nenhuma recomendação disponível para este perfil.</p>';
     elRecommendationsGrid.classList.remove('hidden');
+    elShowMoreContainer.classList.add('hidden');
     return;
   }
 
@@ -412,6 +418,13 @@ function renderRecommendations() {
   });
 
   elRecommendationsGrid.classList.remove('hidden');
+
+  if (state.recommendationsLimit >= 50 || state.recommendations.length < state.recommendationsLimit) {
+    elBtnShowMore.disabled = true;
+  } else {
+    elBtnShowMore.disabled = false;
+  }
+  elShowMoreContainer.classList.remove('hidden');
 }
 
 /**
@@ -473,6 +486,12 @@ function showGlobalError(msg) {
 elUserSelect.addEventListener('change', (e) => selectUser(e.target.value));
 elBtnTrainModel.addEventListener('click', trainModel);
 elBtnRefreshLlm.addEventListener('click', refreshLlmContext);
+elBtnShowMore.addEventListener('click', async () => {
+  if (state.recommendationsLimit < 50 && state.currentUserId) {
+    state.recommendationsLimit = Math.min(50, state.recommendationsLimit + 10);
+    await loadRecommendations(state.currentUserId);
+  }
+});
 
 // Bootstrap
 window.addEventListener('DOMContentLoaded', async () => {

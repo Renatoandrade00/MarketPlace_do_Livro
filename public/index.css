@@ -670,6 +670,22 @@ body {
   margin-top: auto;
 }
 
+.show-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.show-more-container .btn {
+  width: auto;
+  min-width: 180px;
+}
+
+.show-more-container .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ==========================================================================
    Responsividade
    ========================================================================== */

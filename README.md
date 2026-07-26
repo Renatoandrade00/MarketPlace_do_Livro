@@ -319,14 +319,78 @@ O projeto está dividido em **6 fases sequenciais**, pensadas para execução in
 
 | Fase | Descrição | Status |
 |---|---|---|
-| **Fase 1** | Estrutura base, dados e banco de dados (SQLite + Prisma) | 🔲 Pendente |
-| **Fase 2** | Engine de IA com TensorFlow.js (Two-Tower Network) | 🔲 Pendente |
-| **Fase 3** | Backend & integração com LLM (Express API) | 🔲 Pendente |
-| **Fase 4** | Interface do usuário (Frontend Web) | 🔲 Pendente |
-| **Fase 5** | Testes de ciclo fechado e validação | 🔲 Pendente |
-| **Fase 6** | Deploy e publicação (Render + Turso) | 🔲 Pendente |
+| **Fase 1** | Estrutura base, dados e banco de dados (SQLite + Prisma) | ✅ Concluído |
+| **Fase 2** | Engine de IA com TensorFlow.js (Two-Tower Network) | ✅ Concluído |
+| **Fase 3** | Backend & integração com LLM (Express API) | ✅ Concluído |
+| **Fase 4** | Interface do usuário (Frontend Web) | ✅ Concluído |
+| **Fase 5** | Testes de ciclo fechado e validação | ✅ Concluído |
+| **Fase 6** | Deploy e publicação (Render + Turso) | ✅ Concluído |
 
 > Para detalhes de cada fase, consulte o [PRD](docs/PRD_Market_Place_do_Livro.md) e o [SPEC técnico](docs/SPEC_MarketPlace_do_Livro.md).
+
+---
+
+## 🚀 Guia de Deploy (Turso + Render)
+
+### 1. Configurando o Banco de Dados no Turso
+
+O projeto utiliza **SQLite** localmente e **Turso** (libSQL) em produção através de Driver Adapters do Prisma.
+
+1. Crie uma conta em [turso.tech](https://turso.tech).
+2. Instale a CLI do Turso em seu computador:
+   - **Windows (PowerShell)**: `iwr https://get.tur.so/install.ps1 | iex`
+   - **macOS/Linux**: `curl -sSf https://get.tur.so/install.sh | sh`
+3. Autentique-se no terminal:
+   ```bash
+   turso auth login
+   ```
+4. Crie o seu banco de dados remoto:
+   ```bash
+   turso db create marketplace-livro
+   ```
+5. Obtenha a URL do banco de dados remoto:
+   ```bash
+   turso db show marketplace-livro --url
+   ```
+   *(Esta será sua variável `TURSO_DATABASE_URL`)*
+6. Crie um token de autenticação:
+   ```bash
+   turso db tokens create marketplace-livro
+   ```
+   *(Esta será sua variável `TURSO_AUTH_TOKEN`)*
+
+### 2. Aplicando o Schema e Populando o Turso (Seed)
+
+Para empurrar as tabelas locais (schema) e os dados de testes (seed) para o banco remoto no Turso, execute em seu terminal local:
+
+```bash
+# Definindo as variáveis de ambiente temporariamente (no PowerShell do Windows):
+$env:TURSO_DATABASE_URL="libsql://seu-db.turso.io"
+$env:TURSO_AUTH_TOKEN="seu-token-aqui"
+
+# 1. Pressione a estrutura de tabelas para o Turso
+npx prisma db push
+
+# 2. Rode o script de seed para popular os dados no Turso
+node prisma/seed.js
+```
+
+### 3. Deploy no Render
+
+1. Crie uma conta no [Render](https://render.com).
+2. Crie um novo **Web Service** conectado ao seu repositório do GitHub.
+3. Configure as propriedades básicas:
+   - **Runtime**: `Node`
+   - **Build Command**: `npm install && npx prisma generate`
+   - **Start Command**: `node src/server.js`
+4. Vá em **Environment** e configure as seguintes variáveis de ambiente:
+   - `DATABASE_URL`: `file:./dev.db` (Necessário para o build-time do Prisma local, mantendo o fallback padrão)
+   - `TURSO_DATABASE_URL`: URL do seu banco obtida no Turso (`libsql://...`)
+   - `TURSO_AUTH_TOKEN`: Token gerado pelo Turso
+   - `GEMINI_API_KEY`: Sua chave de API da Google AI Studio (Gemini)
+   - `ADMIN_TOKEN`: Um token secreto arbitrário (usado nas ações administrativas da interface)
+
+Pronto! Ao concluir o deploy, o Render servirá tanto o backend Express quanto a interface estática do frontend de forma integrada em uma única URL.
 
 ---
 

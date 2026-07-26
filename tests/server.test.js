@@ -110,6 +110,12 @@ describe('REST API Routes Tests - Step 3.1 & 3.2', () => {
       expect(rec.justificativa).toBeDefined();
     }
   });
+ 
+  test('GET /api/recommendations/:userId should respect limit query param', async () => {
+    const res = await request(app).get(`/api/recommendations/${testUser.id}?limit=5`);
+    expect(res.status).toBe(200);
+    expect(res.body.books.length).toBeLessThanOrEqual(5);
+  });
 
   test('GET /api/recommendations/:userId should 404 for unknown user', async () => {
     const res = await request(app).get('/api/recommendations/999999');

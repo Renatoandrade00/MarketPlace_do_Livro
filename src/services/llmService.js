@@ -47,72 +47,46 @@ function sanitize(str) {
 async function refreshStoreContext(prisma) {
   try {
     // 1. Gênero mais popular (com mais compras)
-    const genrePurchases = await prisma.purchase.findMany({
-      include: { book: true }
-    });
+    const popularGenreResult = await prisma.$queryRaw`
+      SELECT B.genero, COUNT(*) as count
+      FROM Purchase P
+      JOIN Book B ON P.bookId = B.id
+      GROUP BY B.genero
+      ORDER BY count DESC
+      LIMIT 1
+    `;
+    const generoMaisPopular = popularGenreResult[0]?.genero || "Ficção";
 
-    const genreCounts = {};
-    const authorCounts = {};
-    for (const p of genrePurchases) {
-      if (p.book) {
-        const gen = p.book.genero || "Não classificado";
-        genreCounts[gen] = (genreCounts[gen] || 0) + 1;
+    // 2. Autor mais lido
+    const popularAuthorResult = await prisma.$queryRaw`
+      SELECT B.autor, COUNT(*) as count
+      FROM Purchase P
+      JOIN Book B ON P.bookId = B.id
+      GROUP BY B.autor
+      ORDER BY count DESC
+      LIMIT 1
+    `;
+    const autorMaisLido = popularAuthorResult[0]?.autor || "Não classificado";
 
-        const auth = p.book.autor || "Desconhecido";
-        authorCounts[auth] = (authorCounts[auth] || 0) + 1;
-      }
-    }
-
-    let generoMaisPopular = "Ficção";
-    let maxGenreCount = 0;
-    for (const [gen, count] of Object.entries(genreCounts)) {
-      if (count > maxGenreCount) {
-        maxGenreCount = count;
-        generoMaisPopular = gen;
-      }
-    }
-
-    let autorMaisLido = "Desconhecido";
-    let maxAuthorCount = 0;
-    for (const [auth, count] of Object.entries(authorCounts)) {
-      if (count > maxAuthorCount) {
-        maxAuthorCount = count;
-        autorMaisLido = auth;
-      }
-    }
-
-    // 2. Faixa etária predominante dos compradores
-    const usersWithPurchases = await prisma.user.findMany({
-      where: { purchases: { some: {} } }
-    });
-
-    const ageGroups = {
-      "0-17": 0,
-      "18-24": 0,
-      "25-34": 0,
-      "35-44": 0,
-      "45-54": 0,
-      "55+": 0
-    };
-
-    for (const u of usersWithPurchases) {
-      const age = u.idade;
-      if (age < 18) ageGroups["0-17"]++;
-      else if (age <= 24) ageGroups["18-24"]++;
-      else if (age <= 34) ageGroups["25-34"]++;
-      else if (age <= 44) ageGroups["35-44"]++;
-      else if (age <= 54) ageGroups["45-54"]++;
-      else ageGroups["55+"]++;
-    }
-
-    let faixaEtariaPredominante = "25-34";
-    let maxAgeCount = 0;
-    for (const [group, count] of Object.entries(ageGroups)) {
-      if (count > maxAgeCount) {
-        maxAgeCount = count;
-        faixaEtariaPredominante = group;
-      }
-    }
+    // 3. Faixa etária predominante dos compradores
+    const predominantAgeResult = await prisma.$queryRaw`
+      SELECT 
+        CASE 
+          WHEN U.idade < 18 THEN '0-17'
+          WHEN U.idade >= 18 AND U.idade <= 24 THEN '18-24'
+          WHEN U.idade >= 25 AND U.idade <= 34 THEN '25-34'
+          WHEN U.idade >= 35 AND U.idade <= 44 THEN '35-44'
+          WHEN U.idade >= 45 AND U.idade <= 54 THEN '45-54'
+          ELSE '55+'
+        END as ageGroup,
+        COUNT(*) as count
+      FROM User U
+      WHERE EXISTS (SELECT 1 FROM Purchase P WHERE P.userId = U.id)
+      GROUP BY ageGroup
+      ORDER BY count DESC
+      LIMIT 1
+    `;
+    const faixaEtariaPredominante = predominantAgeResult[0]?.ageGroup || "25-34";
 
     storeContext = {
       generoMaisPopular,

@@ -404,6 +404,13 @@ Pronto! Ao concluir o deploy, o Render servirá tanto o backend Express quanto a
 | **Cold start do Render** | Primeira requisição após inatividade leva ~30–60s — **não é um bug**, é o free tier "acordando" |
 | **Enriquecimento de gênero incompleto** | Nem todo ISBN retorna subjects na Open Library — fallback "Não classificado" |
 
+### 📸 Estado de Fallback (Cold Start)
+Para leitores recém-criados ou sem histórico de compras/treinamento, o sistema ativa automaticamente o fallback de popularidade geral, exibindo um alerta informativo na interface:
+
+<p align="center">
+  <img src="docs/cold_start.png" alt="Interface no estado de Fallback (Cold Start)" width="90%"/>
+</p>
+
 ---
 
 ## 🤝 Contribuição

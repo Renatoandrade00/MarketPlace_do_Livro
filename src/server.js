@@ -393,62 +393,69 @@ app.post('/api/llm/refresh-context', adminLimiter, requireAdminToken, async (req
 const PORT = process.env.PORT || 3000;
 
 async function bootstrap() {
-  // 1. Tentar carregar modelo existente em disco
-  console.log("Tentando carregar modelo salvo anteriormente...");
-  const model = await loadModel(DEFAULT_MODEL_DIR);
-  const meta = loadMetadata(DEFAULT_MODEL_DIR);
-
-  if (model && meta) {
-    activeModel = model;
-    activeVocab = meta.vocab;
-    activeNormStats = meta.normStats;
-    modelStatus.status = "idle";
-    modelStatus.lastTrainedAt = new Date().toISOString(); // simulado do boot
-    console.log("Modelo Two-Tower carregado com sucesso a partir de disco!");
-  } else {
-    // 2. Se não existir, rodar o treino automático no boot (necessário em produção/reboot)
-    console.log("Nenhum modelo válido encontrado no disco. Iniciando treino automático de boot...");
-    try {
-      const users = await prisma.user.findMany();
-      const books = await prisma.book.findMany();
-      const purchases = await prisma.purchase.findMany();
-
-      if (users.length > 0 && books.length > 0 && purchases.length > 0) {
-        const result = await trainModel({
-          users,
-          books,
-          purchases,
-          modelDir: DEFAULT_MODEL_DIR
-        });
-
-        activeModel = result.model;
-        activeVocab = result.vocab;
-        activeNormStats = result.normStats;
-
-        modelStatus.status = "idle";
-        modelStatus.lastTrainedAt = new Date().toISOString();
-        modelStatus.metrics = {
-          loss: parseFloat(result.history.finalLoss.toFixed(4)),
-          valLoss: parseFloat(result.history.finalValLoss.toFixed(4)),
-          epochs: result.history.epochs
-        };
-        console.log("Treino automático de boot finalizado. Modelo Two-Tower inicializado.");
-      } else {
-        console.log("Banco de dados sem dados suficientes para treinar. Modelo não carregado.");
-      }
-    } catch (err) {
-      console.error("Falha ao rodar o treino automático de boot:", err);
-    }
-  }
-
-  // 3. Inicializar estatísticas agregadas do LLM Service
-  console.log("Calculando contexto agregador inicial para o serviço de LLM...");
-  await refreshStoreContext(prisma);
-
-  // 4. Iniciar servidor Express
+  // 1. Iniciar servidor Express imediatamente para liberar a porta no Render
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
+
+  // Executar inicialização pesada em background sem travar o boot do Render
+  (async () => {
+    // 2. Tentar carregar modelo existente em disco
+    console.log("Tentando carregar modelo salvo anteriormente...");
+    const model = await loadModel(DEFAULT_MODEL_DIR);
+    const meta = loadMetadata(DEFAULT_MODEL_DIR);
+
+    if (model && meta) {
+      activeModel = model;
+      activeVocab = meta.vocab;
+      activeNormStats = meta.normStats;
+      modelStatus.status = "idle";
+      modelStatus.lastTrainedAt = new Date().toISOString(); // simulado do boot
+      console.log("Modelo Two-Tower carregado com sucesso a partir de disco!");
+    } else {
+      // 3. Se não existir, rodar o treino automático no boot (necessário em produção/reboot)
+      console.log("Nenhum modelo válido encontrado no disco. Iniciando treino automático de boot...");
+      try {
+        const users = await prisma.user.findMany();
+        const books = await prisma.book.findMany();
+        const purchases = await prisma.purchase.findMany();
+
+        if (users.length > 0 && books.length > 0 && purchases.length > 0) {
+          const result = await trainModel({
+            users,
+            books,
+            purchases,
+            modelDir: DEFAULT_MODEL_DIR
+          });
+
+          activeModel = result.model;
+          activeVocab = result.vocab;
+          activeNormStats = result.normStats;
+
+          modelStatus.status = "idle";
+          modelStatus.lastTrainedAt = new Date().toISOString();
+          modelStatus.metrics = {
+            loss: parseFloat(result.history.finalLoss.toFixed(4)),
+            valLoss: parseFloat(result.history.finalValLoss.toFixed(4)),
+            epochs: result.history.epochs
+          };
+          console.log("Treino automático de boot finalizado. Modelo Two-Tower inicializado.");
+        } else {
+          console.log("Banco de dados sem dados suficientes para treinar. Modelo não carregado.");
+        }
+      } catch (err) {
+        console.error("Falha ao rodar o treino automático de boot:", err);
+      }
+    }
+
+    // 4. Inicializar estatísticas agregadas do LLM Service
+    console.log("Calculando contexto agregador inicial para o serviço de LLM...");
+    try {
+      await refreshStoreContext(prisma);
+    } catch (err) {
+      console.error("Falha ao inicializar contexto do LLM:", err);
+    }
+  })();
 }
 
 // Iniciar bootstrap se não estiver rodando em ambiente de teste

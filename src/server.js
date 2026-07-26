@@ -136,7 +136,6 @@ app.get('/api/recommendations/:userId', generalLimiter, async (req, res) => {
     }
 
     // Gerar as justificativas e montar a resposta
-    const recommendedBooks = [];
     
     // Suportar limit via query parameter (default 10, máximo 50)
     let limit = 10;
@@ -149,9 +148,9 @@ app.get('/api/recommendations/:userId', generalLimiter, async (req, res) => {
 
     const topRecommendations = recommendations.slice(0, limit);
 
-    for (const rec of topRecommendations) {
+    const recommendedBooksRaw = await Promise.all(topRecommendations.map(async (rec) => {
       const book = books.find(b => b.id === rec.bookId);
-      if (!book) continue;
+      if (!book) return null;
 
       const scorePercent = Math.round(rec.score * 100);
       const isPurchased = purchasedBookIds.has(book.id);
@@ -165,7 +164,7 @@ app.get('/api/recommendations/:userId', generalLimiter, async (req, res) => {
         usingFallback
       });
 
-      recommendedBooks.push({
+      return {
         bookId: book.id,
         nome: book.nome,
         autor: book.autor,
@@ -175,8 +174,10 @@ app.get('/api/recommendations/:userId', generalLimiter, async (req, res) => {
         scorePercent,
         isPurchased,
         justificativa
-      });
-    }
+      };
+    }));
+
+    const recommendedBooks = recommendedBooksRaw.filter(b => b !== null);
 
     res.json({
       userId,
